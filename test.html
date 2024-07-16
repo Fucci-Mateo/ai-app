@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modern Glass Image Generator</title>
+    <style>
+        * {font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            
+        }
+        body, html {
+            
+            background-color: #080808;
+            color: #fff;
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+        .container {
+            display: flex;
+            gap: 2vw;
+            width: 95%;
+            width: 80vw;
+            max-height: 65vh;
+            aspect-ratio: 16 / 9;
+            overflow: visible;
+        }
+        .panel {
+            background: rgba(25, 25, 25, 0.6);
+            backdrop-filter: blur(10px);
+            border-radius: 8px;
+            padding: 1.25rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            overflow: visible;
+        }
+        .left-panel {
+            flex: 3;
+        }
+        .right-panel {
+            flex: 2;
+        }
+        .panel-content {
+            display: flex;
+            gap: 1rem;
+            flex: 1;
+            overflow: visible;
+        }
+        .column {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            row-gap: 2rem;
+            overflow: visible;
+        }
+        .element-container {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            flex: 1;
+            min-height: 0;
+        }
+        .element-title {
+            font-size: 0.75rem;
+            color: #aaa;
+            text-transform: none;
+            letter-spacing: 0.05em;
+        }
+        .upload-area, .prompt-area, .generated-image {
+            background: rgba(40, 40, 40, 0.6);
+            border-radius: 8px;
+            padding: 1rem;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 0.9rem;
+            color: #e0e0e0;
+            transition: all 0.2s ease;
+            flex: 1;
+            overflow: hidden;
+        }
+        input:focus,textarea:focus {
+            outline: none;
+        }
+        .upload-area {
+            cursor: pointer;
+            position: relative;
+        }
+        .upload-area input[type="file"] {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            cursor: pointer;
+        }
+        .upload-area img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+        .prompt-area {
+            display: flex;
+        }
+        .prompt-area textarea {
+            width: 100%;
+            height: 100%;
+            background-color: transparent;
+            border: none;
+            color: #e0e0e0;
+            resize: none;
+            font-size: 0.9rem;
+            font-family: inherit;
+        }
+        button {
+            background-color: #8A2BE2;
+            color: #fff;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        button:hover {
+            background-color: #9932CC;
+        }
+        .element-title-container {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .info-icon {
+            width: 16px;
+            height: 16px;
+            background-color: #aaa;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 0.7rem;
+            font-weight: bold;
+            cursor: help;
+            position: relative;
+            z-index: 100;
+            overflow: visible;
+        }
+
+        .info-icon:hover::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translate(-50%, -200%);
+            background-color: rgba(0, 0, 0, 0.8);
+            color: #fff;
+            padding: 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            white-space: nowrap;
+            z-index: 10;
+            margin-top: 0.5rem;
+            z-index: 100;
+            overflow: visible;
+        }
+    </style>
+</head>
+</head>
+<body>
+
+    <div class="container">
+        <div class="panel left-panel">
+            <div class="panel-content">
+                <div class="column">
+                    <div class="element-container">
+                        <div class="element-title-container">
+                            <div class="element-title">Product Image</div>
+                            <div class="info-icon" data-tooltip="Upload a clear, high-quality image of your product">i</div>
+                        </div>
+                        <div class="upload-area" id="uploadArea">
+                            <input type="file" id="imageUpload" accept="image/*">
+                            <span id="uploadText">Click to upload image</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="column">
+                    <div class="element-container">
+                        <div class="element-title">Positive Prompt</div>
+                        <div class="prompt-area">
+                            <textarea placeholder="Enter positive prompt here..."></textarea>
+                        </div>
+                    </div>
+                    <div class="element-container">
+                        <div class="element-title">Negative Prompt</div>
+                        <div class="prompt-area">
+                            <textarea placeholder="Enter negative prompt here..."></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <button id="generateBtn">Generate</button>
+        </div>
+        <div class="panel right-panel">
+            <div class="element-container">
+                <div class="element-title">Result</div>
+                <div class="generated-image" id="generatedImage">
+                    Generated image will appear here
+                </div>
+            </div>
+            <button id="downloadBtn">Download</button>
+        </div>
+    </div>
+
+    <script>
+        const uploadArea = document.getElementById('uploadArea');
+        const imageUpload = document.getElementById('imageUpload');
+        const uploadText = document.getElementById('uploadText');
+        const generateBtn = document.getElementById('generateBtn');
+        const generatedImage = document.getElementById('generatedImage');
+        const downloadBtn = document.getElementById('downloadBtn');
+
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (file && file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    uploadArea.innerHTML = `<img src="${e.target.result}" alt="Uploaded image">`;
+                }
+                reader.readAsDataURL(file);
+            }
+        }
+
+        imageUpload.addEventListener('change', handleFileSelect);
+
+        uploadArea.addEventListener('click', (event) => {
+            // Prevent the click event from triggering twice
+            if (event.target !== imageUpload) {
+                imageUpload.click();
+            }
+        });
+
+        generateBtn.addEventListener('click', () => {
+            generatedImage.innerHTML = 'Generating...';
+            setTimeout(() => {
+                generatedImage.innerHTML = '<img src="/api/placeholder/400/400" alt="Generated image" style="max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 8px;">';
+            }, 2000);
+        });
+
+        downloadBtn.addEventListener('click', () => {
+            alert('Image downloaded!');
+        });
+    </script>
+</body>
+</html>
