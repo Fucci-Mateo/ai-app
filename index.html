@@ -229,6 +229,8 @@
             const downloadBtn = document.getElementById('downloadBtn');
 
             let uploadedImage = null;
+            let currentGeneratedImageUrl = null;
+
 
             function handleFileSelect(event) {
                 const file = event.target.files[0];
@@ -329,23 +331,48 @@
                             positivePrompt.value,
                             negativePrompt.value
                         );
-                        console.log(generatedImageUrl);
+                        console.log('Generated Image URL:', generatedImageUrl);
 
                         if (generatedImageUrl && generatedImage) {
                             generatedImage.innerHTML = `<img src="${generatedImageUrl}" alt="Generated image" style="max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 8px;">`;
+                            currentGeneratedImageUrl = generatedImageUrl;
+                            downloadBtn.disabled = false;
                         }
                     } catch (error) {
                         console.error('Process error:', error);
                         if (generatedImage) {
                             generatedImage.innerHTML = `Failed to generate image: ${error.message}`;
                         }
+                        downloadBtn.disabled = true;
                     }
                 });
             }
 
+            function downloadImage(imageUrl, fileName) {
+                fetch(imageUrl)
+                    .then(response => response.blob())
+                    .then(blob => {
+                        const url = window.URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.style.display = 'none';
+                        a.href = url;
+                        a.download = fileName;
+                        document.body.appendChild(a);
+                        a.click();
+                        window.URL.revokeObjectURL(url);
+                    })
+                    .catch(error => console.error('Download failed:', error));
+            }
+
             if (downloadBtn) {
+                downloadBtn.disabled = true; // Initially disable the download button
                 downloadBtn.addEventListener('click', () => {
-                    alert('Image downloaded!');
+                    if (currentGeneratedImageUrl) {
+                        const fileName = 'generated_image.png'; // You can customize the file name here
+                        downloadImage(currentGeneratedImageUrl, fileName);
+                    } else {
+                        alert('No image has been generated yet.');
+                    }
                 });
             }
         });
