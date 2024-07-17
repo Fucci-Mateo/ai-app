@@ -264,7 +264,7 @@
                 formData.append('file', img);
 
                 try {
-                    const response = await fetch('http://localhost:5000/upload', {
+                    const response = await fetch('http://34.116.202.145:9099/upload', {
                         method: 'POST',
                         body: formData
                     });
@@ -285,15 +285,15 @@
 
             async function generateImage(secureUrl, positivePrompt, negativePrompt) {
                 try {
-                    const response = await fetch('http://localhost:5000/generate', {
+                    const response = await fetch('http://34.116.202.145:9099/generate', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
                         },
                         body: JSON.stringify({
-                            secure_url: secureUrl,
-                            positive_prompt: positivePrompt,
-                            negative_prompt: negativePrompt
+                            productimageurl: secureUrl,
+                            positiveprompt: positivePrompt,
+                            negativeprompt: negativePrompt
                         })
                     });
 
@@ -304,7 +304,7 @@
 
                     const data = await response.json();
                     console.log('Generation successful:', data);
-                    return data.generated_image_url;
+                    return data.image_url;
                 } catch (error) {
                     console.error('Generation error:', error);
                     throw error;
@@ -329,6 +329,7 @@
                             positivePrompt.value,
                             negativePrompt.value
                         );
+                        console.log(generatedImageUrl);
 
                         if (generatedImageUrl && generatedImage) {
                             generatedImage.innerHTML = `<img src="${generatedImageUrl}" alt="Generated image" style="max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 8px;">`;
