@@ -40,7 +40,7 @@ generate = '''
   }},
   "5": {{
     "inputs": {{
-      "text": "{negativeprompt} dark, poor textures, worst quality, multiple objects",
+      "text": "{negativeprompt} dark, poor textures, worst quality, multiple objects, product deformation",
       "clip": [
         "2",
         1
