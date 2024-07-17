@@ -304,7 +304,7 @@
 
                     const data = await response.json();
                     console.log('Generation successful:', data);
-                    return data.generated_image_url;
+                    return data.image_url;
                 } catch (error) {
                     console.error('Generation error:', error);
                     throw error;
@@ -329,10 +329,10 @@
                             positivePrompt.value,
                             negativePrompt.value
                         );
-                        console.log(generatedImageUrl.image_url)
+                        console.log(generatedImageUrl)
 
                         if (generatedImageUrl && generatedImage) {
-                            generatedImage.innerHTML = `<img src="${generatedImageUrl.image_url}" alt="Generated image" style="max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 8px;">`;
+                            generatedImage.innerHTML = `<img src="${generatedImageUrl}" alt="Generated image" style="max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 8px;">`;
                         }
                     } catch (error) {
                         console.error('Process error:', error);
