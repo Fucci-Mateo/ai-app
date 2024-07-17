@@ -75,7 +75,8 @@ def generate():
     if prompt_status == 'Failed':
         return jsonify({"error": "Prompt failed"}), 400
     else:
-        return helpers.upload_generation_results(data['gen_id'])
+        image_url = helpers.upload_generation_results(data['gen_id'])
+        return jsonify({'image_url': image_url})
     
 
 @app.route('/upload', methods=['POST', 'OPTIONS'])
