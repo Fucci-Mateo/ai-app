@@ -329,10 +329,10 @@
                             positivePrompt.value,
                             negativePrompt.value
                         );
-                        console.log(generatedImageUrl)
+                        console.log(generatedImageUrl.image_url)
 
                         if (generatedImageUrl && generatedImage) {
-                            generatedImage.innerHTML = `<img src="${generatedImageUrl}" alt="Generated image" style="max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 8px;">`;
+                            generatedImage.innerHTML = `<img src="${generatedImageUrl.image_url}" alt="Generated image" style="max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 8px;">`;
                         }
                     } catch (error) {
                         console.error('Process error:', error);
