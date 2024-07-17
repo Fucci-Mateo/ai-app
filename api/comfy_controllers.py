@@ -9,9 +9,9 @@ history_endpoint= '/history'
 
 def push_queue(workflow):
     #create payload
-    data={ 'prompt':workflow }
+    data={ 'prompt': json.loads(workflow) }
     response = requests.post(base_url + prompt_endpoint, json=data,headers={'Content-Type': 'application/json'})
-    print(response.text)
+    
     #check response
     if response.status_code == 200:
         return json.loads(response.text)

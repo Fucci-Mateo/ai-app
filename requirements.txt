@@ -2,3 +2,4 @@ requests
 cloudinary
 io
 PIL
+Flask-CORS

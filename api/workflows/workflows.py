@@ -1,11 +1,13 @@
 import json
 
-def format_workflow(workflow_string,data):
+def format_workflow(workflow, data):
     try:
-        formatted_json = workflow_string.format(**data)
-        return json.loads(formatted_json), None
+        formatted_workflow = json.loads(json.dumps(workflow).format(**data))
+        return formatted_workflow, None
     except KeyError as e:
-        return None, {{"error": f"Missing key in data: {{str(e)}}"}}
+        return None, {"error": f"Missing key in data: {str(e)}"}
+    except Exception as e:
+        return None, {"error": f"Error formatting workflow: {str(e)}"}
     
   
 # URL for face pose image

@@ -178,16 +178,12 @@
 </head>
 </head>
 <body>
-
     <div class="container">
         <div class="panel left-panel">
             <div class="panel-content">
                 <div class="column">
                     <div class="element-container">
-                        <div class="element-title-container">
-                            <div class="element-title">Product Image</div>
-                            <div class="info-icon" data-tooltip="Upload a clear, high-quality image of your product">i</div>
-                        </div>
+                        <div class="element-title">Product Image</div>
                         <div class="upload-area" id="uploadArea">
                             <input type="file" id="imageUpload" accept="image/*">
                             <span id="uploadText">Click to upload image</span>
@@ -198,13 +194,13 @@
                     <div class="element-container">
                         <div class="element-title">Positive Prompt</div>
                         <div class="prompt-area">
-                            <textarea placeholder="Enter positive prompt here..."></textarea>
+                            <textarea id="positivePrompt" placeholder="Enter positive prompt here..."></textarea>
                         </div>
                     </div>
                     <div class="element-container">
                         <div class="element-title">Negative Prompt</div>
                         <div class="prompt-area">
-                            <textarea placeholder="Enter negative prompt here..."></textarea>
+                            <textarea id="negativePrompt" placeholder="Enter negative prompt here..."></textarea>
                         </div>
                     </div>
                 </div>
@@ -223,42 +219,134 @@
     </div>
 
     <script>
-        const uploadArea = document.getElementById('uploadArea');
-        const imageUpload = document.getElementById('imageUpload');
-        const uploadText = document.getElementById('uploadText');
-        const generateBtn = document.getElementById('generateBtn');
-        const generatedImage = document.getElementById('generatedImage');
-        const downloadBtn = document.getElementById('downloadBtn');
+        document.addEventListener('DOMContentLoaded', function() {
+            const uploadArea = document.getElementById('uploadArea');
+            const imageUpload = document.getElementById('imageUpload');
+            const positivePrompt = document.getElementById('positivePrompt');
+            const negativePrompt = document.getElementById('negativePrompt');
+            const generateBtn = document.getElementById('generateBtn');
+            const generatedImage = document.getElementById('generatedImage');
+            const downloadBtn = document.getElementById('downloadBtn');
 
-        function handleFileSelect(event) {
-            const file = event.target.files[0];
-            if (file && file.type.startsWith('image/')) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    uploadArea.innerHTML = `<img src="${e.target.result}" alt="Uploaded image">`;
+            let uploadedImage = null;
+
+            function handleFileSelect(event) {
+                const file = event.target.files[0];
+                if (file && file.type.startsWith('image/')) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        uploadArea.innerHTML = `<img src="${e.target.result}" alt="Uploaded image">`;
+                        uploadedImage = file;
+                    }
+                    reader.readAsDataURL(file);
                 }
-                reader.readAsDataURL(file);
             }
-        }
 
-        imageUpload.addEventListener('change', handleFileSelect);
-
-        uploadArea.addEventListener('click', (event) => {
-            // Prevent the click event from triggering twice
-            if (event.target !== imageUpload) {
-                imageUpload.click();
+            if (imageUpload) {
+                imageUpload.addEventListener('change', handleFileSelect);
             }
-        });
 
-        generateBtn.addEventListener('click', () => {
-            generatedImage.innerHTML = 'Generating...';
-            setTimeout(() => {
-                generatedImage.innerHTML = '<img src="/api/placeholder/400/400" alt="Generated image" style="max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 8px;">';
-            }, 2000);
-        });
+            if (uploadArea) {
+                uploadArea.addEventListener('click', (event) => {
+                    if (event.target !== imageUpload) {
+                        imageUpload.click();
+                    }
+                });
+            }
 
-        downloadBtn.addEventListener('click', () => {
-            alert('Image downloaded!');
+            async function uploadToBackend(img) {
+                if (!img) {
+                    console.error('No image selected');
+                    return null;
+                }
+
+                const formData = new FormData();
+                formData.append('file', img);
+
+                try {
+                    const response = await fetch('http://127.0.0.1:9099/upload', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.error || 'Upload failed');
+                    }
+
+                    const data = await response.json();
+                    console.log('Upload successful:', data);
+                    return data;
+                } catch (error) {
+                    console.error('Upload error:', error);
+                    throw error;
+                }
+            }
+
+            async function generateImage(secureUrl, positivePrompt, negativePrompt) {
+                try {
+                    const response = await fetch('http://127.0.0.1:9099/generate', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            productimageurl: secureUrl,
+                            positiveprompt: positivePrompt,
+                            negativeprompt: negativePrompt
+                        })
+                    });
+
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.error || 'Generation failed');
+                    }
+
+                    const data = await response.json();
+                    console.log('Generation successful:', data);
+                    return data.generated_image_url;
+                } catch (error) {
+                    console.error('Generation error:', error);
+                    throw error;
+                }
+            }
+
+            if (generateBtn) {
+                generateBtn.addEventListener('click', async () => {
+                    if (!uploadedImage) {
+                        alert('Please upload an image first.');
+                        return;
+                    }
+
+                    if (generatedImage) {
+                        generatedImage.innerHTML = 'Uploading and generating...';
+                    }
+
+                    try {
+                        const uploadData = await uploadToBackend(uploadedImage);
+                        const generatedImageUrl = await generateImage(
+                            uploadData.secure_url,
+                            positivePrompt.value,
+                            negativePrompt.value
+                        );
+
+                        if (generatedImageUrl && generatedImage) {
+                            generatedImage.innerHTML = `<img src="${generatedImageUrl}" alt="Generated image" style="max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 8px;">`;
+                        }
+                    } catch (error) {
+                        console.error('Process error:', error);
+                        if (generatedImage) {
+                            generatedImage.innerHTML = `Failed to generate image: ${error.message}`;
+                        }
+                    }
+                });
+            }
+
+            if (downloadBtn) {
+                downloadBtn.addEventListener('click', () => {
+                    alert('Image downloaded!');
+                });
+            }
         });
     </script>
 </body>
