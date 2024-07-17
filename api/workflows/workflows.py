@@ -27,7 +27,7 @@ generate = '''
   }},
   "4": {{
     "inputs": {{
-      "text": " {positiveprompt} sunny, bright, professional photoshoot, ultra realistic, 4K, product picture, no human, beautiful landscape, clean",
+      "text": " {positiveprompt} professional photoshoot, ultra realistic, 4K, product picture, beautiful landscape, clean",
       "clip": [
         "2",
         1
