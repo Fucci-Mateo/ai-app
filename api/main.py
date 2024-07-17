@@ -119,10 +119,5 @@ def upload_file():
             return jsonify({'error': str(e)}), 500
         
 
-
-@app.route('/test', methods=['GET'])
-def test():
-    return jsonify({"message": "Test route working"}), 200
-
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=9099, debug=True)

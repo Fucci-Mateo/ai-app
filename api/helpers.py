@@ -30,42 +30,15 @@ def upload_generation_results(gen_id):
     return result_url
 
 
-def delayed_delete(cloudinary_ids,model_pics):
+def delayed_delete(gen_id):
     print("DELETION PROCESS STARTED. SLEEP 10.")
-    time.sleep(10)
-    for pic in model_pics:
-        os.system('sudo rm -rf {pic}'.format(pic=pic))
+    time.sleep(90)
+    pic = get_gen_result(gen_id)[0]
+    os.system('sudo rm -rf {pic}'.format(pic=pic))
 
-    for public_id in cloudinary_ids:
-        cloudinary_api.delete_image_cloudordinary(public_id)
+    cloudinary_api.delete_image_cloudordinary(f"product-{gen_id}")
 
     print("DELETION PROCESS FINISHED.")
-    
-def upload_image(file):
-    try:
-        # Read the binary data
-        image_binary = file.read()
-        
-        # Open the image using PIL
-        image = Image.open(io.BytesIO(image_binary))
-        
-        # Apply any transformations
-        transformed_image = image
-        
-        # Convert the image back to binary
-        buffered = io.BytesIO()
-        transformed_image.save(buffered, format="PNG")
-        img_str = base64.b64encode(buffered.getvalue())
-        
-        # Upload to Cloudinary
-        result = cloudinary.uploader.upload("data:image/png;base64," + img_str.decode())
-        print(result['secure_url'])
-        return jsonify({
-            'secure_url': result['secure_url'],
-            'public_id': result['public_id']
-        }), 200
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
 
 
 # def upload_model(user_id,gen_id,model_setup):
