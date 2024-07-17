@@ -329,6 +329,7 @@
                             positivePrompt.value,
                             negativePrompt.value
                         );
+                        console.log(generatedImageUrl)
 
                         if (generatedImageUrl && generatedImage) {
                             generatedImage.innerHTML = `<img src="${generatedImageUrl}" alt="Generated image" style="max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 8px;">`;
