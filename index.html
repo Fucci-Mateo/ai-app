@@ -264,7 +264,7 @@
                 formData.append('file', img);
 
                 try {
-                    const response = await fetch('http://127.0.0.1:9099/upload', {
+                    const response = await fetch('http://34.116.202.145:9099/upload', {
                         method: 'POST',
                         body: formData
                     });
@@ -285,7 +285,7 @@
 
             async function generateImage(secureUrl, positivePrompt, negativePrompt) {
                 try {
-                    const response = await fetch('http://127.0.0.1:9099/generate', {
+                    const response = await fetch('http://34.116.202.145:9099/generate', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
