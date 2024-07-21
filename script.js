@@ -446,18 +446,37 @@ templateItems.forEach(item => {
 
     
 
-    function downloadImage() {
+    async function downloadImage() {
         if (currentGeneratedImageUrl) {
-            const link = document.createElement('a');
-            link.href = currentGeneratedImageUrl;
-            link.download = 'generated_image.png';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+            try {
+                // Fetch the image
+                const response = await fetch(currentGeneratedImageUrl);
+                const blob = await response.blob();
+    
+                // Create a temporary URL for the blob
+                const blobUrl = window.URL.createObjectURL(blob);
+    
+                // Create a temporary anchor element
+                const link = document.createElement('a');
+                link.href = blobUrl;
+                link.download = 'generated_image.png'; // You can customize the filename here
+    
+                // Append to the document, trigger click, and remove
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+    
+                // Release the blob URL
+                window.URL.revokeObjectURL(blobUrl);
+            } catch (error) {
+                console.error('Error downloading image:', error);
+                alert('Failed to download the image. Please try again.');
+            }
         } else {
             alert('No image has been generated yet.');
         }
     }
+    
 
     // Initialize
     addCustomLightBtn.disabled = true;
