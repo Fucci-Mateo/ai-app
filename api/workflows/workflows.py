@@ -379,7 +379,7 @@ generate = '''
   }},
   "265": {{
     "inputs": {{
-      "image": "https://res.cloudinary.com/dtsxndikq/image/upload/v1721166828/light.png",
+      "image": "{lightmaskurl}",
       "keep_alpha_channel": false,
       "output_mode": false
     }},

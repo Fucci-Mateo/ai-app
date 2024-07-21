@@ -39,8 +39,8 @@ def parse_and_validate_post_request(request):
 
 @app.route('/generate', methods=['POST'])
 def generate():
-    print('hello')
     # Validate Post request
+
     
     data, error_response, status_code = parse_and_validate_post_request(request)
     if error_response:
@@ -54,7 +54,9 @@ def generate():
 
     
     # Format the JSON template with the values
-    
+    if 'lightmaskurl' not in data.keys():
+        data['lightmaskurl'] = 'https://res.cloudinary.com/dtsxndikq/image/upload/v1721567795/studio.png'
+        
     formatted_workflow, error = workflows.format_workflow(workflows.generate,data)
     
     if error:

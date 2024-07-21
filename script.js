@@ -16,6 +16,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const downloadBtn = document.getElementById('downloadBtn');
     const templateItems = document.querySelectorAll('.template-item');
     const brushSizeInput = document.getElementById('BrushPx');
+    const positivePromptInput = document.getElementById('positivePrompt');
+    const negativePromptInput = document.getElementById('negativePrompt');
 
     // Variables
     let uploadedImage = null;
@@ -27,8 +29,9 @@ document.addEventListener('DOMContentLoaded', function() {
     let currentGeneratedImageUrl = null;
     let brushSize = 30; // Default brush size
     let currentMode = 'draw'; // Current drawing mode
-    let LightMask = null; // Variable to store the image with black background
     let isProcessingClick = false;
+    let uploadedImageBin = null;
+    let LightMaskBin = null;
 
     // Event Listeners
     const handleUploadAreaClick = function(event) {
@@ -57,9 +60,21 @@ document.addEventListener('DOMContentLoaded', function() {
     eraseBtn.addEventListener('click', () => setMode('erase'));
     clearBtn.addEventListener('click', clearCanvas);
     applyCustomLightBtn.addEventListener('click', applyCustomLight);
-    generateBtn.addEventListener('click', generateImage);
     downloadBtn.addEventListener('click', downloadImage);
     brushSizeInput.addEventListener('input', updateBrushSize);
+
+    generateBtn.addEventListener('click', function() {
+    const positivePrompt = positivePromptInput.value.trim();
+    const negativePrompt = negativePromptInput.value.trim();
+    
+    if (!positivePrompt) {
+        alert('Please enter a positive prompt.');
+        return;
+    }
+    
+    generateImage(positivePrompt, negativePrompt);
+});
+    
 
     templateItems.forEach(item => {
         item.addEventListener('click', function() {
@@ -67,18 +82,12 @@ document.addEventListener('DOMContentLoaded', function() {
             drawTemplate(template);
         });
     });
-
+    
     // Functions
     function handleFileSelect(event) {
-        console.log('handleFileSelect function called');
-        console.log('Event type:', event.type);
-        console.log('Event target:', event.target);
-        console.log('Files:', event.target.files);
-        console.log('File input value before processing:', event.target.value);
-    
         const file = event.target.files[0];
+        uploadedImageBin = file;
         if (!file) {
-            console.log('No file selected, ignoring event');
             return;
         }
     
@@ -90,22 +99,14 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     
         if (file.type.startsWith('image/')) {
-            console.log('Valid image file selected:', file.name);
             const reader = new FileReader();
             reader.onload = function(e) {
-                console.log('FileReader onload event fired');
                 uploadedImage = e.target.result;
-                console.log('Image loaded, calling displayUploadedImage');
                 displayUploadedImage(uploadedImage);
-                console.log('displayUploadedImage completed');
                 addCustomLightBtn.disabled = false;
-                console.log('Custom light button enabled');
                 clearCanvas(); // Clear the canvas after the image is loaded
-                console.log('Canvas cleared');
             }
-            console.log('Starting to read file');
             reader.readAsDataURL(file);
-            console.log('File read initiated');
         } else {
             console.log('Invalid file type selected');
         }
@@ -329,9 +330,6 @@ document.addEventListener('DOMContentLoaded', function() {
         uploadArea.innerHTML = '';
         uploadArea.appendChild(img);
 
-        // Optionally, you can also replace the content in the "generatedImage" container
-        // generatedImage.innerHTML = `<img src="${combinedImageUrl}" alt="Generated image" style="max-width: 100%; max-height: 100%; object-fit: contain;">`;
-
         // Enable the download button
         currentGeneratedImageUrl = combinedImageUrl;
         downloadBtn.disabled = false;
@@ -351,8 +349,11 @@ document.addEventListener('DOMContentLoaded', function() {
         // Draw the user drawing on top of the black background
         blackBackgroundCtx.drawImage(drawCanvas, 0, 0);
 
-        // Convert the canvas to a data URL and store it in LightMask
-        LightMask = blackBackgroundCanvas.toDataURL('image/png');
+        // Convert the canvas to a Blob
+        blackBackgroundCanvas.toBlob(function(blob) {
+            // Store the Blob in LightMaskBin
+            LightMaskBin = blob;
+        }, 'image/png');
     }
 
     async function uploadToBackend(img) {
@@ -384,15 +385,30 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    async function generateImage(secureUrl, positivePrompt, negativePrompt) {
+    function renderResult(url) {
+        generatedImage.innerHTML = `<img src="${url}" alt="Generated image" style="max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 8px;">`;
+        currentGeneratedImageUrl = url;
+        downloadBtn.disabled = false;
+    }
+
+    async function generateImage(positivePrompt, negativePrompt) {
         try {
+            const ProductImageUrl = await uploadToBackend(uploadedImageBin);
+            const LightMaskUrl = await uploadToBackend(LightMaskBin);
+            
+            console.log('ProductImageUrl:', ProductImageUrl);
+            console.log('LightMaskUrl:', LightMaskUrl);
+            console.log('Positive Prompt:', positivePrompt);
+            console.log('Negative Prompt:', negativePrompt);
+    
             const response = await fetch('http://34.116.202.145:9099/generate', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    productimageurl: secureUrl,
+                    productimageurl: ProductImageUrl.secure_url,
+                    lightmaskurl: LightMaskUrl.secure_url,
                     positiveprompt: positivePrompt,
                     negativeprompt: negativePrompt
                 })
@@ -405,12 +421,29 @@ document.addEventListener('DOMContentLoaded', function() {
     
             const data = await response.json();
             console.log('Generation successful:', data);
+    
+            // Render the generated image
+            if (data.image_url) {
+                const generatedImg = document.getElementById('generatedImage');
+                generatedImg.innerHTML = `<img src="${data.image_url}" alt="Generated image" style="max-width: 100%; max-height: 100%; object-fit: contain;">`;
+                
+                // Update the currentGeneratedImageUrl for the download function
+                currentGeneratedImageUrl = data.image_url;
+                
+                // Enable the download button
+                downloadBtn.disabled = false;
+            } else {
+                console.error('No image URL in the response');
+            }
+    
             return data.image_url;
         } catch (error) {
             console.error('Generation error:', error);
+            alert('Failed to generate image. Please try again.');
             throw error;
         }
     }
+
     
 
     function downloadImage() {
@@ -430,6 +463,3 @@ document.addEventListener('DOMContentLoaded', function() {
     addCustomLightBtn.disabled = true;
     downloadBtn.disabled = true;
 });
-
-
-
