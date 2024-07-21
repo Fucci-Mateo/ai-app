@@ -19,6 +19,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Variables
     let uploadedImage = null;
+    let isUploading = false;
     let ctx, drawCtx;
     let isDrawing = false;
     let lastX = 0;
@@ -26,9 +27,28 @@ document.addEventListener('DOMContentLoaded', function() {
     let currentGeneratedImageUrl = null;
     let brushSize = 30; // Default brush size
     let currentMode = 'draw'; // Current drawing mode
+    let LightMask = null; // Variable to store the image with black background
+    let isProcessingClick = false;
 
     // Event Listeners
+    const handleUploadAreaClick = function(event) {
+        if (isProcessingClick) return;
+        isProcessingClick = true;
+
+        console.log('Upload area clicked');
+        event.preventDefault();
+        event.stopPropagation();
+        
+        imageUpload.click();
+
+        setTimeout(() => {
+            isProcessingClick = false;
+        }, 500);  // Prevent additional clicks for 500ms
+    };
+    
+    uploadArea.addEventListener('click', handleUploadAreaClick);
     imageUpload.addEventListener('change', handleFileSelect);
+    
     addCustomLightBtn.addEventListener('click', openModal);
     if (closeModal) {
         closeModal.addEventListener('click', closeModalFunction);
@@ -50,16 +70,49 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Functions
     function handleFileSelect(event) {
+        console.log('handleFileSelect function called');
+        console.log('Event type:', event.type);
+        console.log('Event target:', event.target);
+        console.log('Files:', event.target.files);
+        console.log('File input value before processing:', event.target.value);
+    
         const file = event.target.files[0];
-        if (file && file.type.startsWith('image/')) {
+        if (!file) {
+            console.log('No file selected, ignoring event');
+            return;
+        }
+    
+        console.log('File details:', {
+            name: file.name,
+            type: file.type,
+            size: file.size,
+            lastModified: new Date(file.lastModified).toISOString()
+        });
+    
+        if (file.type.startsWith('image/')) {
+            console.log('Valid image file selected:', file.name);
             const reader = new FileReader();
             reader.onload = function(e) {
+                console.log('FileReader onload event fired');
                 uploadedImage = e.target.result;
+                console.log('Image loaded, calling displayUploadedImage');
                 displayUploadedImage(uploadedImage);
+                console.log('displayUploadedImage completed');
                 addCustomLightBtn.disabled = false;
+                console.log('Custom light button enabled');
+                clearCanvas(); // Clear the canvas after the image is loaded
+                console.log('Canvas cleared');
             }
+            console.log('Starting to read file');
             reader.readAsDataURL(file);
+            console.log('File read initiated');
+        } else {
+            console.log('Invalid file type selected');
         }
+    
+        // Reset the input to allow selecting the same file again
+        event.target.value = '';
+        console.log('File input value after reset:', event.target.value);
     }
 
     function displayUploadedImage(imageDataUrl) {
@@ -69,10 +122,7 @@ document.addEventListener('DOMContentLoaded', function() {
         img.style.maxWidth = '100%';
         img.style.maxHeight = '100%';
         img.style.objectFit = 'contain';
-        img.onload = () => {
-            uploadArea.appendChild(img);
-            addCustomLightBtn.disabled = false;
-        };
+        uploadArea.appendChild(img);
     }
 
     function openModal() {
@@ -109,24 +159,26 @@ document.addEventListener('DOMContentLoaded', function() {
             // Set canvas dimensions
             imageCanvas.width = drawCanvas.width = canvasWidth;
             imageCanvas.height = drawCanvas.height = canvasHeight;
-    
+            imageCanvas.style.width = drawCanvas.style.width = canvasWidth + 'px';
+            imageCanvas.style.height = drawCanvas.style.height = canvasHeight + 'px';
+
             ctx = imageCanvas.getContext('2d');
             drawCtx = drawCanvas.getContext('2d');
-    
+
             ctx.clearRect(0, 0, imageCanvas.width, imageCanvas.height);
             drawCtx.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
-    
+
             // Draw the image on the canvas
             ctx.drawImage(img, 0, 0, canvasWidth, canvasHeight);
-    
+
             drawCtx.lineCap = 'round';
             drawCtx.lineJoin = 'round';
-    
+
             drawCanvas.addEventListener('mousedown', startDrawing);
             drawCanvas.addEventListener('mousemove', draw);
             drawCanvas.addEventListener('mouseup', stopDrawing);
             drawCanvas.addEventListener('mouseout', stopDrawing);
-    
+
             setMode('draw'); // Set initial mode to draw
             updateBrushSize(); // Initialize brush size
         };
@@ -149,8 +201,6 @@ document.addEventListener('DOMContentLoaded', function() {
         drawCtx.stroke();
 
         [lastX, lastY] = [x, y];
-
-        console.log('Drawing/Erasing at:', x, y, 'Mode:', currentMode); // Debugging line
     }
 
     function stopDrawing() {
@@ -163,7 +213,6 @@ document.addEventListener('DOMContentLoaded', function() {
         const scaleY = canvas.height / rect.height;
         const x = (e.clientX - rect.left) * scaleX;
         const y = (e.clientY - rect.top) * scaleY;
-        console.log(`Mouse Pos - X: ${x}, Y: ${y}, ScaleX: ${scaleX}, ScaleY: ${scaleY}`);
         return [x, y];
     }
 
@@ -186,8 +235,6 @@ document.addEventListener('DOMContentLoaded', function() {
         } else if (mode === 'erase') {
             eraseBtn.classList.add('selected');
         }
-
-        console.log('Mode set to:', mode); // Debugging line
     }
 
     function updateBrushSize() {
@@ -196,11 +243,14 @@ document.addEventListener('DOMContentLoaded', function() {
         if (brushSize > 100) brushSize = 100;
         brushSizeInput.value = brushSize;
         drawCtx.lineWidth = brushSize;
-        console.log('Brush size updated to:', brushSize); // Debugging line
     }
 
     function clearCanvas() {
-        drawCtx.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
+        if (drawCtx) {
+            drawCtx.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
+        } else {
+            console.log('Drawing context not initialized yet, skipping canvas clear');
+        }
     }
 
     function drawTemplate(shape) {
@@ -241,27 +291,127 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function applyCustomLight() {
+        // Close the modal
         closeModalFunction();
-        // You can add code here to send the drawCanvas data to your API
+
+        // Create a temporary canvas to combine the image and drawing
+        const tempCanvas = document.createElement('canvas');
+        const tempCtx = tempCanvas.getContext('2d');
+
+        // Set the temporary canvas dimensions to match the image canvas
+        tempCanvas.width = imageCanvas.width;
+        tempCanvas.height = imageCanvas.height;
+
+        // Draw the uploaded image onto the temporary canvas
+        tempCtx.drawImage(imageCanvas, 0, 0);
+
+        // Set the opacity for the drawing layer
+        tempCtx.globalAlpha = 0.3; // Adjust opacity here (0.0 to 1.0)
+
+        // Draw the user drawing on top of the image
+        tempCtx.drawImage(drawCanvas, 0, 0);
+
+        // Reset the global alpha to default
+        tempCtx.globalAlpha = 1.0;
+
+        // Convert the combined canvas to a data URL
+        const combinedImageUrl = tempCanvas.toDataURL('image/png');
+
+        // Display the combined image in the main container
+        const img = document.createElement('img');
+        img.src = combinedImageUrl;
+        img.style.maxWidth = '100%';
+        img.style.maxHeight = '100%';
+        img.style.objectFit = 'contain';
+
+        // Clear the previous content and append the new combined image
+        const uploadArea = document.getElementById('uploadArea');
+        uploadArea.innerHTML = '';
+        uploadArea.appendChild(img);
+
+        // Optionally, you can also replace the content in the "generatedImage" container
+        // generatedImage.innerHTML = `<img src="${combinedImageUrl}" alt="Generated image" style="max-width: 100%; max-height: 100%; object-fit: contain;">`;
+
+        // Enable the download button
+        currentGeneratedImageUrl = combinedImageUrl;
+        downloadBtn.disabled = false;
+
+        // Create a temporary canvas to save the drawing with black background
+        const blackBackgroundCanvas = document.createElement('canvas');
+        const blackBackgroundCtx = blackBackgroundCanvas.getContext('2d');
+
+        // Set the temporary canvas dimensions to match the drawCanvas
+        blackBackgroundCanvas.width = drawCanvas.width;
+        blackBackgroundCanvas.height = drawCanvas.height;
+
+        // Fill the canvas with black
+        blackBackgroundCtx.fillStyle = 'black';
+        blackBackgroundCtx.fillRect(0, 0, blackBackgroundCanvas.width, blackBackgroundCanvas.height);
+
+        // Draw the user drawing on top of the black background
+        blackBackgroundCtx.drawImage(drawCanvas, 0, 0);
+
+        // Convert the canvas to a data URL and store it in LightMask
+        LightMask = blackBackgroundCanvas.toDataURL('image/png');
     }
 
-    function generateImage() {
-        if (!uploadedImage) {
-            alert('Please upload an image first.');
-            return;
+    async function uploadToBackend(img) {
+        if (!img) {
+            console.error('No image selected');
+            return null;
         }
-
-        generatedImage.innerHTML = 'Generating results...';
-
-        // Here you would typically send the data to your backend API
-        // For demonstration, we'll just use a placeholder
-        setTimeout(() => {
-            const generatedImageUrl = 'https://via.placeholder.com/400x400.png?text=Generated+Image';
-            generatedImage.innerHTML = `<img src="${generatedImageUrl}" alt="Generated image" style="max-width: 100%; max-height: 100%; object-fit: contain;">`;
-            currentGeneratedImageUrl = generatedImageUrl;
-            downloadBtn.disabled = false;
-        }, 2000);
+    
+        const formData = new FormData();
+        formData.append('file', img);
+    
+        try {
+            const response = await fetch('http://34.116.202.145:9099/upload', {
+                method: 'POST',
+                body: formData
+            });
+    
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Upload failed');
+            }
+    
+            const data = await response.json();
+            console.log('Upload successful:', data);
+            return data;
+        } catch (error) {
+            console.error('Upload error:', error);
+            throw error;
+        }
     }
+    
+    async function generateImage(secureUrl, positivePrompt, negativePrompt) {
+        try {
+            const response = await fetch('http://34.116.202.145:9099/generate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    productimageurl: secureUrl,
+                    positiveprompt: positivePrompt,
+                    negativeprompt: negativePrompt
+                })
+            });
+    
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Generation failed');
+            }
+    
+            const data = await response.json();
+            console.log('Generation successful:', data);
+            return data.image_url;
+        } catch (error) {
+            console.error('Generation error:', error);
+            throw error;
+        }
+    }
+    
 
     function downloadImage() {
         if (currentGeneratedImageUrl) {
@@ -280,3 +430,6 @@ document.addEventListener('DOMContentLoaded', function() {
     addCustomLightBtn.disabled = true;
     downloadBtn.disabled = true;
 });
+
+
+

@@ -256,12 +256,13 @@ button:hover {
         margin-top: auto;
     }
 
-    #canvasContainer {height: 100%;
+    #canvasContainer {
+        height: 100%;
         width: 100%;
         position: relative;
         overflow: hidden;
     }
-
+    
     #imageCanvas, #drawCanvas {
         position: absolute;
         top: 0;
