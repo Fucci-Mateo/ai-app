@@ -248,11 +248,18 @@ templateItems.forEach(item => {
     }
 
     function updateBrushSize() {
-        brushSize = parseInt(brushSizeInput.value);
-        if (isNaN(brushSize) || brushSize < 1) brushSize = 1;
-        if (brushSize > 100) brushSize = 100;
-        brushSizeInput.value = brushSize;
-        drawCtx.lineWidth = brushSize;
+        let size = parseInt(brushSizeInput.value);
+        
+        // Apply limits only when setting the final value
+        if (isNaN(size) || size < 0) size = 0;
+        if (size > 400) size = 400;
+        
+        brushSize = size;
+        brushSizeInput.value = size;
+        
+        if (drawCtx) {
+            drawCtx.lineWidth = brushSize;
+        }
     }
 
     function clearCanvas() {
@@ -373,14 +380,10 @@ templateItems.forEach(item => {
         }
     }
     
-    function renderResult(url) {
-        generatedImage.innerHTML = `<img src="${url}" alt="Generated image" style="max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 8px;">`;
-        currentGeneratedImageUrl = url;
-        downloadBtn.disabled = false;
-    }
-
     async function generateImage(positivePrompt, negativePrompt) {
         try {
+            generatedImage.innerHTML = '<div><svg version="1.1" id="loader" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 50 50" style="enable-background:new 0 0 50 50;" xml:space="preserve"><path fill="#816dcd" d="M43.935,25.145c0-10.318-8.364-18.682-18.682-18.682c-10.318,0-18.682,8.364-18.682,18.682h4.068c0-8.072,6.542-14.614,14.614-14.614c8.072,0,14.614,6.542,14.614,14.614H43.935z"><animateTransform attributeType="xml" attributeName="transform" type="rotate" from="0 25 25" to="360 25 25" dur="1s" repeatCount="indefinite"/></path></svg></div>'
+
             const ProductImageUrl = await uploadToBackend(uploadedImageBin);
             const LightMaskUrl = await uploadToBackend(LightMaskBin);
             
@@ -413,6 +416,7 @@ templateItems.forEach(item => {
             // Render the generated image
             if (data.image_url) {
                 const generatedImg = document.getElementById('generatedImage');
+
                 generatedImg.innerHTML = `<img src="${data.image_url}" alt="Generated image" style="max-width: 100%; max-height: 100%; object-fit: contain;">`;
                 
                 // Update the currentGeneratedImageUrl for the download function
@@ -422,6 +426,7 @@ templateItems.forEach(item => {
                 downloadBtn.disabled = false;
             } else {
                 console.error('No image URL in the response');
+                generatedImage.innerText = 'Error generating image';
             }
     
             return data.image_url;

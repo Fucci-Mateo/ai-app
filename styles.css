@@ -413,3 +413,10 @@ button:hover {
         height: 60px;
     }
 }
+
+#loader {
+    width: 50px; /* Adjust the size as needed */
+    height: 50px;
+    margin: auto;
+    display: block;
+}
