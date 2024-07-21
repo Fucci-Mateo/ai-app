@@ -18,8 +18,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const brushSizeInput = document.getElementById('BrushPx');
     const positivePromptInput = document.getElementById('positivePrompt');
     const negativePromptInput = document.getElementById('negativePrompt');
-
+    
     // Variables
+    const templateImages = {};
     let uploadedImage = null;
     let isUploading = false;
     let ctx, drawCtx;
@@ -76,12 +77,21 @@ document.addEventListener('DOMContentLoaded', function() {
 });
     
 
-    templateItems.forEach(item => {
-        item.addEventListener('click', function() {
-            const template = this.dataset.template;
-            drawTemplate(template);
-        });
+templateItems.forEach(item => {
+    const template = item.dataset.template;
+    const imageUrl = item.style.backgroundImage.slice(4, -1).replace(/"/g, "");
+    
+    // Preload the image
+    const img = new Image();
+    img.src = imageUrl;
+    img.onload = () => {
+        templateImages[template] = img;
+    };
+
+    item.addEventListener('click', function() {
+        drawTemplateImage(template);
     });
+});
     
     // Functions
     function handleFileSelect(event) {
@@ -148,7 +158,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const imageHeight = img.height;
             const aspectRatio = imageWidth / imageHeight;
             let canvasWidth, canvasHeight;
-
+    
             if (containerRect.width / containerRect.height > aspectRatio) {
                 canvasHeight = containerRect.height;
                 canvasWidth = canvasHeight * aspectRatio;
@@ -156,36 +166,35 @@ document.addEventListener('DOMContentLoaded', function() {
                 canvasWidth = containerRect.width;
                 canvasHeight = canvasWidth / aspectRatio;
             }
-
+    
             // Set canvas dimensions
             imageCanvas.width = drawCanvas.width = canvasWidth;
             imageCanvas.height = drawCanvas.height = canvasHeight;
             imageCanvas.style.width = drawCanvas.style.width = canvasWidth + 'px';
             imageCanvas.style.height = drawCanvas.style.height = canvasHeight + 'px';
-
+    
             ctx = imageCanvas.getContext('2d');
-            drawCtx = drawCanvas.getContext('2d');
-
+            drawCtx = drawCanvas.getContext('2d', { willReadFrequently: true });
+    
             ctx.clearRect(0, 0, imageCanvas.width, imageCanvas.height);
             drawCtx.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
-
+    
             // Draw the image on the canvas
             ctx.drawImage(img, 0, 0, canvasWidth, canvasHeight);
-
+    
             drawCtx.lineCap = 'round';
             drawCtx.lineJoin = 'round';
-
+    
             drawCanvas.addEventListener('mousedown', startDrawing);
             drawCanvas.addEventListener('mousemove', draw);
             drawCanvas.addEventListener('mouseup', stopDrawing);
             drawCanvas.addEventListener('mouseout', stopDrawing);
-
+    
             setMode('draw'); // Set initial mode to draw
             updateBrushSize(); // Initialize brush size
         };
         img.src = uploadedImage;
     }
-
     function startDrawing(e) {
         isDrawing = true;
         [lastX, lastY] = getMousePos(drawCanvas, e);
@@ -224,7 +233,7 @@ document.addEventListener('DOMContentLoaded', function() {
             drawCtx.strokeStyle = 'rgba(0,0,0,1)';
         } else {
             drawCtx.globalCompositeOperation = 'source-over';
-            drawCtx.strokeStyle = 'white';
+            drawCtx.strokeStyle = 'red';
         }
         drawCtx.lineWidth = brushSize;
 
@@ -254,41 +263,20 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    function drawTemplate(shape) {
-        clearCanvas();
-        const centerX = drawCanvas.width / 2;
-        const centerY = drawCanvas.height / 2;
-        const size = Math.min(drawCanvas.width, drawCanvas.height) / 4;
-
-        drawCtx.strokeStyle = 'white';
-        drawCtx.lineWidth = 2;
-        drawCtx.beginPath();
-
-        switch(shape) {
-            case 'circle':
-                drawCtx.arc(centerX, centerY, size, 0, 2 * Math.PI);
-                break;
-            case 'square':
-                drawCtx.rect(centerX - size, centerY - size, size * 2, size * 2);
-                break;
-            case 'triangle':
-                drawCtx.moveTo(centerX, centerY - size);
-                drawCtx.lineTo(centerX - size, centerY + size);
-                drawCtx.lineTo(centerX + size, centerY + size);
-                drawCtx.closePath();
-                break;
-            case 'star':
-                for (let i = 0; i < 5; i++) {
-                    const angle = (i * 4 * Math.PI) / 5 - Math.PI / 2;
-                    const x = centerX + size * Math.cos(angle);
-                    const y = centerY + size * Math.sin(angle);
-                    i === 0 ? drawCtx.moveTo(x, y) : drawCtx.lineTo(x, y);
-                }
-                drawCtx.closePath();
-                break;
+    function drawTemplateImage(template) {
+        if (!drawCtx || !templateImages[template]) {
+            console.log('Drawing context not initialized or template image not loaded');
+            return;
         }
-
-        drawCtx.stroke();
+    
+        clearCanvas();
+    
+        const img = templateImages[template];
+        const scale = Math.min(drawCanvas.width / img.width, drawCanvas.height / img.height);
+        const x = (drawCanvas.width / 2) - (img.width / 2) * scale;
+        const y = (drawCanvas.height / 2) - (img.height / 2) * scale;
+    
+        drawCtx.drawImage(img, x, y, img.width * scale, img.height * scale);
     }
 
     function applyCustomLight() {

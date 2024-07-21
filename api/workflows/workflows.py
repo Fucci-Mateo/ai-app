@@ -416,7 +416,3 @@ generate = '''
     }}
   }}
 }}'''
-
-
-example_pp='blue bike standing on rocks,beach, sand, rocks, summer, \nsunny, bright, forestation, professional photoshoot, ultra realistic, 4K, product picture, no human, beautiful landscape, clean'
-example_np='dark, poor textures, worst quality, multiple objects, human, girl, human face'

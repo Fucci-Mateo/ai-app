@@ -331,7 +331,7 @@ button:hover {
         grid-template-columns: repeat(2, 1fr);
         grid-template-rows: repeat(2, 1fr);
         gap: 20px;
-        height: calc(100% - 20px); /* Subtract margin-bottom of templates-header */
+        height: calc(100% - 20px);
     }
 
     .template-item {
@@ -342,6 +342,11 @@ button:hover {
         align-items: center;
         cursor: pointer;
         transition: background-color 0.3s;
+        position: relative;
+        overflow: hidden;
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
     }
 
     .template-item:hover {
@@ -349,13 +354,17 @@ button:hover {
     }
 
     .template-name {
+        position: absolute;
+        bottom: 5px;
+        left: 5px;
         color: #fff;
         font-size: 0.9rem;
-        text-align: center;
+        text-align: left;
         letter-spacing: 0.05em;
         font-weight: 500;
-        word-break: break-word;
-        padding: 5px;
+        background-color: rgba(0, 0, 0, 0.6);
+        padding: 2px 5px;
+        border-radius: 3px;
     }
    
 
