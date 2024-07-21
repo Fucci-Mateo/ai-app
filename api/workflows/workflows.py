@@ -379,7 +379,7 @@ generate = '''
   }},
   "265": {{
     "inputs": {{
-      "image": "https://res.cloudinary.com/dtsxndikq/image/upload/v1721166828/light.png",
+      "image": "{lightmaskurl}",
       "keep_alpha_channel": false,
       "output_mode": false
     }},
@@ -417,6 +417,3 @@ generate = '''
   }}
 }}'''
 
-
-example_pp='blue bike standing on rocks,beach, sand, rocks, summer, \nsunny, bright, forestation, professional photoshoot, ultra realistic, 4K, product picture, no human, beautiful landscape, clean'
-example_np='dark, poor textures, worst quality, multiple objects, human, girl, human face'
