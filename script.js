@@ -383,15 +383,22 @@ templateItems.forEach(item => {
     async function generateImage(positivePrompt, negativePrompt) {
         try {
             generatedImage.innerHTML = '<div><svg version="1.1" id="loader" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 50 50" style="enable-background:new 0 0 50 50;" xml:space="preserve"><path fill="#816dcd" d="M43.935,25.145c0-10.318-8.364-18.682-18.682-18.682c-10.318,0-18.682,8.364-18.682,18.682h4.068c0-8.072,6.542-14.614,14.614-14.614c8.072,0,14.614,6.542,14.614,14.614H43.935z"><animateTransform attributeType="xml" attributeName="transform" type="rotate" from="0 25 25" to="360 25 25" dur="1s" repeatCount="indefinite"/></path></svg></div>'
+            let LightMaskUrl = '';
 
             const ProductImageUrl = await uploadToBackend(uploadedImageBin);
-            const LightMaskUrl = await uploadToBackend(LightMaskBin);
-            
+            if (LightMaskBin != null) {
+                LightMaskUrl = await uploadToBackend(LightMaskBin);
+            }else{
+                LightMaskUrl = {
+                    secure_url: ""
+                }
+            }
+
             console.log('ProductImageUrl:', ProductImageUrl);
             console.log('LightMaskUrl:', LightMaskUrl);
             console.log('Positive Prompt:', positivePrompt);
             console.log('Negative Prompt:', negativePrompt);
-    
+            
             const response = await fetch('http://34.116.202.145:9099/generate', {
                 method: 'POST',
                 headers: {
