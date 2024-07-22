@@ -1,12 +1,14 @@
 import glob
 import cloudinary_api
-import airtable_api
 import threading
 from credentials import creds
 import time
 import os
 import cloudinary
 import cloudinary.uploader
+import logging
+import json
+
 
 # Configuration       
 cloudinary.config( 
@@ -14,6 +16,14 @@ cloudinary.config(
     api_key = creds['CLOUDINARY_API_KEY'], 
     api_secret = creds['CLOUDINARY_API_SECRET'], # Click 'View Credentials' below to copy your API secret
     secure=True
+)     
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s %(levelname)s: %(message)s',
+    handlers=[
+        logging.FileHandler("api.log"),
+        logging.StreamHandler()
+    ]
 )
 
 def get_gen_result(gen_id):
@@ -24,21 +34,39 @@ def get_gen_result(gen_id):
 def upload_generation_results(gen_id):
     #get path to model pics
     inference_result_path = get_gen_result(gen_id)[0]
-    
     result_url = cloudinary_api.upload_cloudinary(inference_result_path, f"product-{gen_id}")
-    
     return result_url
 
 
-def delayed_delete(gen_id):
-    print("DELETION PROCESS STARTED. SLEEP 10.")
-    time.sleep(90)
+def result_delayed_delete(gen_id,sleep):
+    print("DELETION PROCESS STARTED FOR SYSTEM, ID: {}. SLEEP {}s.".format(gen_id,sleep))
+    time.sleep(sleep)
     pic = get_gen_result(gen_id)[0]
     os.system('sudo rm -rf {pic}'.format(pic=pic))
-
     cloudinary_api.delete_image_cloudordinary(f"product-{gen_id}")
-
+    logging.info(json.dumps({'gen_id': gen_id, 'cloudinary_id': f"product-{gen_id}", 'deleted': True, 'platform': 'system & cloudinary'}))
     print("DELETION PROCESS FINISHED.")
+
+
+def cloudinary_delayed_delete(public_id,sleep):
+    print("DELETION PROCESS STARTED FOR CLOUDINARY, ID: {}. SLEEP {}s.".format(public_id,sleep))
+    time.sleep(sleep)
+    cloudinary_api.delete_image_cloudordinary(public_id)
+    logging.info(json.dumps({'public_id': public_id, 'deleted': True, 'platform': 'cloudinary'}))
+    print("DELETION PROCESS FINISHED.")
+
+
+def defer_delete(method,id,sleep):
+    if method == "generation":
+        threading.Thread(target=result_delayed_delete, args=(id,sleep)).start()
+    elif method == "resource":
+        threading.Thread(target=cloudinary_delayed_delete, args=(id,sleep)).start()
+    else:
+        print("Invalid method for deletion.")
+
+
+def couldinary_upload_img_str(img_str):
+    return cloudinary.uploader.upload("data:image/png;base64," + img_str.decode())
 
 
 # def upload_model(user_id,gen_id,model_setup):
