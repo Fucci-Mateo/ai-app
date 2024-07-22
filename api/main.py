@@ -117,7 +117,7 @@ def upload_file():
             img_str = base64.b64encode(buffered.getvalue())
             
             # Upload to Cloudinary
-            result = helpers.couldinary_upload_img_str("data:image/png;base64," + img_str.decode())
+            result = helpers.couldinary_upload_img_str(img_str)
             logging.info(json.dumps({'secure_url': result['secure_url'],
                                      'public_id': result['public_id'],
                                      'upload_success': True})
