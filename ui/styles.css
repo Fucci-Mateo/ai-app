@@ -278,6 +278,10 @@ button:hover {
         object-fit: contain;
     }
 
+    #drawCanvas {
+        opacity: 30%;
+    }
+
     .canvas-controls {
         display: flex;
         gap: 20px;
